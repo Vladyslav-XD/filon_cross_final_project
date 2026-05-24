@@ -1,39 +1,44 @@
-# Mocktail Finder App - UI/UX & Performance Optimizations
+# Mocktail Finder App — UI/UX & Performance Optimizations
 
-Цей документ описує ключові оптимізації та покращення, які були зроблені в рамках цього завдання для додатку Mocktail Finder.
+This document describes the key optimizations and improvements made for the Mocktail Finder app as part of this assignment.
 
-## 🚀 Технічні та анімаційні оптимізації
+## 🚀 Technical and Animation Optimizations
 
-### 1. Перенесення веб-анімацій в React Native (Native-Driven)
-- Повністю відтворено складну CSS-анімацію (keyframes) логотипа-мартіні з бульбашками за допомогою `react-native-svg` та нативного API `Animated`.
-- **Безшовна пульсація (Seamless Loop):** Вирішено проблему мікро-фрізів ("стрибків") в `Animated.loop`. Оскільки React Native скидає значення після кожного циклу, ми синхронізували початкове значення масштабу (`logoScale: 0.98`) із найнижчою точкою анімаційної секвенції. Результат — ідеально плавне, безкінечне "дихання" логотипа.
-- **Hardware Acceleration:** Для всіх рухів (пульсація, рух бульбашок, поява градієнта) жорстко ввімкнено `useNativeDriver: true`. Це повністю знімає навантаження з JS-потоку і гарантує плавні 60 FPS навіть під час важких переходів між екранами.
+### 1. Migrating Web Animations to React Native Native-Driven Animations
 
-### 2. Масштабована фізика бульбашок (Bubble Physics)
-- Замість жорстко заданих CSS координат, які могли б ламатися на мобільних пристроях, впроваджено динамічний розрахунок `scaleRatio`. 
-- Розроблено конфігуратор бульбашок (`baseTransX`, `startY`, `baseScale`), завдяки якому кожна бульбашка має унікальний розмір, хаотичну траєкторію та правильну точку старту (рівно від кромки келиха).
-- Рух бульбашок ідеально вписаний у межі компонента незалежно від того, чи він використовується в хедері (`size=24`), чи на Splash Screen (`size=100`).
+- A complex CSS keyframe animation of the martini-glass logo with bubbles was fully recreated using `react-native-svg` and React Native’s native `Animated` API.
+- **Seamless Pulse Loop:** The issue with micro-freezes or “jumps” in `Animated.loop` was fixed. Since React Native resets the value after each loop, the initial scale value (`logoScale: 0.98`) was synchronized with the lowest point of the animation sequence. As a result, the logo now has a perfectly smooth and continuous “breathing” effect.
+- **Hardware Acceleration:** `useNativeDriver: true` was explicitly enabled for all motion effects, including logo pulsing, bubble movement, and gradient appearance. This reduces the load on the JavaScript thread and helps maintain smooth 60 FPS performance, even during heavier screen transitions.
 
-### 3. Ефект переливання градієнта (Splash Screen)
-- Оптимізовано ефект шиммера (переливання) градієнта.
-- Створено ефект хвилі світла за рахунок одночасної анімації `translateX` широкого компонента `<LinearGradient>` та пульсації `opacity` (від 0 до 0.8) яскравими неоновими кольорами. Це створює вражаючий контрастний перелив при мінімальному використанні ресурсів (без складних масок).
+### 2. Scalable Bubble Physics
+
+- Instead of using fixed CSS coordinates that could break on mobile devices, a dynamic `scaleRatio` calculation was implemented.
+- A bubble configuration system was created using values such as `baseTransX`, `startY`, and `baseScale`. This allows each bubble to have a unique size, more natural movement, and the correct starting point directly from the edge of the glass.
+- The bubble movement stays correctly within the component boundaries, whether the logo is used in the header (`size=24`) or on the Splash Screen (`size=100`).
+
+### 3. Gradient Shimmer Effect on the Splash Screen
+
+- The gradient shimmer effect was optimized.
+- A light-wave effect was created by animating the `translateX` value of a wide `<LinearGradient>` component together with an opacity pulse from `0` to `0.8` using bright neon colours. This creates a strong visual shimmer effect while keeping resource usage low and avoiding complex masks.
 
 ---
 
-## 🎨 UI/UX Покращення
+## 🎨 UI/UX Improvements
 
-### 4. Чистота та мінімалізм інтерфейсу
-- З метою звільнення корисного простору та візуального розвантаження інтерфейсу було **видалено зайві підзаголовки** у хедерах на всіх екранах (Mocktail Finder, Favourites, Add Recipe).
-- У хедері зменшено відступ між логотипом-келихом та головним заголовком (з `12px` до `8px`), що дозволило ідеально згрупувати та відцентрувати ці елементи.
+### 4. Cleaner and More Minimal Interface
 
-### 5. Покращення інтерактивних елементів (Call-to-Action)
-- Неочевидну круглу кнопку "Random" поруч із Featured Recipes (MocktailFinderScreen) замінено на стильну і зрозумілу кнопку у формі "пігулки" з текстом **"Surprise recipe"** поруч з іконкою. Це значно підвищує передбачуваність дії для користувача.
-- Звільнено простір шляхом видалення зайвого текстового лічильника "total" біля списку Featured Recipes.
+- To free up useful space and reduce visual noise, unnecessary subtitles were removed from the headers on all main screens: Mocktail Finder, Favourites, and Add Recipe.
+- The spacing between the glass logo and the main title in the header was reduced from `12px` to `8px`. This helped group and centre these elements more accurately.
 
-### 6. Уніфікація екрану Add Recipe
-- На сторінці `AddRecipeScreen` прибрано "білий аркуш із закругленими кутами" (`borderTopRadius` та негативний `marginTop`), який перекривав хедер. 
-- Тепер форма ідеально та безшовно стикується з хедером прямими лініями, створюючи єдиний і консистентний дизайн з іншими екранами додатку.
+### 5. Improved Interactive Elements and Calls to Action
 
+- The unclear circular “Random” button next to Featured Recipes on the `MocktailFinderScreen` was replaced with a clearer pill-shaped button labelled **“Surprise recipe”** with an icon. This makes the action more understandable and predictable for users.
+- Extra space was also freed by removing the unnecessary “total” text counter next to the Featured Recipes list.
+
+### 6. Unified Add Recipe Screen
+
+- On the `AddRecipeScreen`, the “white sheet” layout with rounded top corners (`borderTopRadius`) and negative `marginTop` was removed because it overlapped with the header.
+- The form now connects seamlessly with the header using straight edges, creating a more consistent layout with the other screens of the app.
 ## Фото застосунку
 
 <img width="2356" height="4198" alt="UI" src="https://github.com/user-attachments/assets/f3903513-5c27-4f32-a386-e77c7ff99cde" />
