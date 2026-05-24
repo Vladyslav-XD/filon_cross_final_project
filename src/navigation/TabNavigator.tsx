@@ -1,0 +1,109 @@
+import React, { useRef } from 'react';
+import { Animated, TouchableOpacity } from 'react-native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { StackNavigator } from './StackNavigator';
+import { FavouritesScreen } from '../screens/FavouritesScreen';
+import { RandomScreen } from '../screens/RandomScreen';
+import { AddRecipeScreen } from '../screens/AddRecipeScreen';
+import { SCREENS } from '../constants/screens';
+import { useTheme } from '../context/ThemeContext';
+import { HomeIcon, HeartIcon, AddRecipeIcon } from '../components/icons';
+
+const Tab = createBottomTabNavigator();
+
+const TabBarButton = (props: any) => {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = (e: any) => {
+    Animated.spring(scale, {
+      toValue: 0.85,
+      useNativeDriver: true,
+      speed: 40,
+      bounciness: 8,
+    }).start();
+    props.onPressIn?.(e);
+  };
+
+  const handlePressOut = (e: any) => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 40,
+      bounciness: 8,
+    }).start();
+    props.onPressOut?.(e);
+  };
+
+  return (
+    <TouchableOpacity
+      {...props}
+      activeOpacity={1}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Animated.View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', transform: [{ scale }] }}>
+        {props.children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
+
+export const TabNavigator = () => {
+  const { colors } = useTheme();
+
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarShowLabel: true,
+        tabBarButton: (props) => <TabBarButton {...props} />,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopWidth: 1,
+          borderTopColor: colors.badgeBorder,
+          height: 80,
+          paddingHorizontal: 20,
+          paddingBottom: 10,
+        },
+        tabBarActiveTintColor: colors.activeBadgeBG,
+        tabBarInactiveTintColor: colors.mainBtn,
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        }
+      }}
+    >
+      <Tab.Screen
+        name={SCREENS.HOME_TAB}
+        component={StackNavigator}
+        options={{
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color, focused }) => (
+            <HomeIcon size={24} color={color} focused={focused} />
+          )
+        }}
+      />
+      <Tab.Screen
+        name={SCREENS.FAVOURITES_TAB}
+        component={FavouritesScreen}
+        options={{
+          tabBarLabel: 'Favourites',
+          tabBarIcon: ({ color, focused }) => (
+            <HeartIcon size={24} color={color} focused={focused} />
+          )
+        }}
+      />
+
+      <Tab.Screen
+        name={SCREENS.ADD_RECIPE_TAB}
+        component={AddRecipeScreen}
+        options={{
+          tabBarLabel: 'Add Recipe',
+          tabBarIcon: ({ color, focused }) => (
+            <AddRecipeIcon size={24} color={color} focused={focused} />
+          )
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
