@@ -1,44 +1,51 @@
-# Mocktail Finder App — UI/UX & Performance Optimizations
+# Mocktail Finder
 
-This document describes the key optimizations and improvements made for the Mocktail Finder app as part of this assignment.
+**A React Native app designed and built to help people discover, save and create alcohol-free drink recipes.**
 
-## 🚀 Technical and Animation Optimizations
+[View the full UX case study](https://www.vladfilon.com/mocktail-finder.html)
 
-### 1. Migrating Web Animations to React Native Native-Driven Animations
+## My role
 
-- A complex CSS keyframe animation of the martini-glass logo with bubbles was fully recreated using `react-native-svg` and React Native’s native `Animated` API.
-- **Seamless Pulse Loop:** The issue with micro-freezes or “jumps” in `Animated.loop` was fixed. Since React Native resets the value after each loop, the initial scale value (`logoScale: 0.98`) was synchronized with the lowest point of the animation sequence. As a result, the logo now has a perfectly smooth and continuous “breathing” effect.
-- **Hardware Acceleration:** `useNativeDriver: true` was explicitly enabled for all motion effects, including logo pulsing, bubble movement, and gradient appearance. This reduces the load on the JavaScript thread and helps maintain smooth 60 FPS performance, even during heavier screen transitions.
+UX/UI Designer, UX Writer & React Native Developer. I worked across the experience from user flows and interface design to component behaviour, motion and implementation.
 
-### 2. Scalable Bubble Physics
+## Product experience
 
-- Instead of using fixed CSS coordinates that could break on mobile devices, a dynamic `scaleRatio` calculation was implemented.
-- A bubble configuration system was created using values such as `baseTransX`, `startY`, and `baseScale`. This allows each bubble to have a unique size, more natural movement, and the correct starting point directly from the edge of the glass.
-- The bubble movement stays correctly within the component boundaries, whether the logo is used in the header (`size=24`) or on the Splash Screen (`size=100`).
+- Discover featured recipes and get a surprise recommendation.
+- Search and filter the collection.
+- Review recipe details in a mobile-first flow.
+- Save favourites for quick return.
+- Add a personal recipe with live validation.
+- Use the app in light or dark mode.
 
-### 3. Gradient Shimmer Effect on the Splash Screen
+## Selected UX decisions
 
-- The gradient shimmer effect was optimized.
-- A light-wave effect was created by animating the `translateX` value of a wide `<LinearGradient>` component together with an opacity pulse from `0` to `0.8` using bright neon colours. This creates a strong visual shimmer effect while keeping resource usage low and avoiding complex masks.
+- Replaced an ambiguous circular random action with a labelled **Surprise recipe** button.
+- Reduced header noise and tightened visual grouping to protect useful mobile space.
+- Unified the Add Recipe screen with the rest of the navigation structure.
+- Designed responsive motion that scales from the compact header mark to the splash screen.
+- Used clear labels and live validation to make recipe creation more predictable.
 
----
+## Design engineering highlights
 
-## 🎨 UI/UX Improvements
+- Recreated the animated martini-glass identity with `react-native-svg` and the native `Animated` API.
+- Used native-driven transforms for smoother motion and lower JavaScript-thread load.
+- Added scale-aware bubble movement so the animation works at multiple component sizes.
+- Built the navigation and application state with React Navigation and Redux Toolkit.
 
-### 4. Cleaner and More Minimal Interface
+## Interface
 
-- To free up useful space and reduce visual noise, unnecessary subtitles were removed from the headers on all main screens: Mocktail Finder, Favourites, and Add Recipe.
-- The spacing between the glass logo and the main title in the header was reduced from `12px` to `8px`. This helped group and centre these elements more accurately.
+<img width="1178" alt="Mocktail Finder interface screens" src="https://github.com/user-attachments/assets/f3903513-5c27-4f32-a386-e77c7ff99cde" />
 
-### 5. Improved Interactive Elements and Calls to Action
+## Stack
 
-- The unclear circular “Random” button next to Featured Recipes on the `MocktailFinderScreen` was replaced with a clearer pill-shaped button labelled **“Surprise recipe”** with an icon. This makes the action more understandable and predictable for users.
-- Extra space was also freed by removing the unnecessary “total” text counter next to the Featured Recipes list.
+React Native · Expo · TypeScript · Redux Toolkit · React Navigation · React Native SVG
 
-### 6. Unified Add Recipe Screen
+## Run locally
 
-- On the `AddRecipeScreen`, the “white sheet” layout with rounded top corners (`borderTopRadius`) and negative `marginTop` was removed because it overlapped with the header.
-- The form now connects seamlessly with the header using straight edges, creating a more consistent layout with the other screens of the app.
-## Фото застосунку
+```bash
+npm install
+npm start
+```
 
-<img width="2356" height="4198" alt="UI" src="https://github.com/user-attachments/assets/f3903513-5c27-4f32-a386-e77c7ff99cde" />
+Expo can then open the project on iOS, Android or the web.
+
