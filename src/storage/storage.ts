@@ -1,0 +1,25 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export const STORAGE_KEYS = {
+  favorites: '@mocktail-finder/favorites/v1',
+  myRecipes: '@mocktail-finder/my-recipes/v1',
+} as const;
+
+export async function loadJson<T>(key: string, fallback: T): Promise<T> {
+  try {
+    const raw = await AsyncStorage.getItem(key);
+    if (raw == null) return fallback;
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    if (__DEV__) console.warn(`[storage] failed to load ${key}`, error);
+    return fallback;
+  }
+}
+
+export async function saveJson(key: string, value: unknown): Promise<void> {
+  try {
+    await AsyncStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    if (__DEV__) console.warn(`[storage] failed to save ${key}`, error);
+  }
+}

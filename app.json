@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Mocktail Finder",
+    "slug": "mocktail-finder",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "mocktailfinder",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#01A6AF"
+    },
+    "ios": {
+      "bundleIdentifier": "com.filonexperiencedesign.mocktailfinder",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.filonexperiencedesign.mocktailfinder",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#01A6AF"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b9fdacfd-8320-4064-8684-0caa86509823"
+      }
+    },
+    "owner": "filon-experience-design"
+  }
+}
