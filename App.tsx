@@ -14,6 +14,7 @@ import { TabNavigator } from './src/navigation/TabNavigator';
 import { FavoritesProvider } from './src/context/FavoritesContext';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { store, hydrateStore } from './src/store/store';
+import { loadDetailsCache } from './src/api/detailsCache';
 import { SplashScreen } from './src/screens/SplashScreen';
 
 export default function App() {
@@ -26,7 +27,8 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    hydrateStore().finally(() => {
+    // Favourites, user recipes and the drink-details cache are read while the splash plays.
+    Promise.all([hydrateStore(), loadDetailsCache()]).finally(() => {
       if (!cancelled) setStoreReady(true);
     });
     return () => {

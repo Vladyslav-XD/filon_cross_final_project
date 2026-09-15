@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { HeartIcon } from './icons';
 import { spacing } from '../theme/spacing';
 import { useTheme } from '../context/ThemeContext';
+import { resolveImageUri } from '../utils/recipePhotos';
 
 interface RecipeCardProps {
   title: string;
@@ -52,7 +53,7 @@ const RecipeCardComponent = ({ title, subtitle, imageUrl, isFavorite, onFavorite
   return (
     <TouchableOpacity style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.badgeBorder }]} onPress={onPress} activeOpacity={0.9}>
       <Animated.Image 
-        source={typeof imageUrl === 'string' ? { uri: imageUrl } : imageUrl} 
+        source={typeof imageUrl === 'string' ? { uri: resolveImageUri(imageUrl) } : imageUrl}
         style={[styles.image, { opacity }]} 
       />
       <Animated.View style={[styles.favoriteButton, { backgroundColor: colors.badgeBG, transform: [{ scale: favScale }] }]}>
@@ -117,5 +118,8 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
+    lineHeight: 18,
+    // Keeps the card height stable while a subtitle is still loading.
+    minHeight: 18,
   },
 });

@@ -6,9 +6,12 @@ import { Recipe } from '../data/mockData';
 import { HeartIcon, ShareIcon, ArrowLeftIcon } from '../components/icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFavorites } from '../context/FavoritesContext';
-import { fetchMocktailDetails } from '../api/api';
+import { RecipeDetails } from '../api/api';
+import { fetchDetailsCached } from '../api/detailsCache';
 import { useTheme } from '../context/ThemeContext';
 import { shareRecipe, splitInstructions } from '../utils/recipeText';
+import { tagsToSubtitle } from '../utils/drinkTags';
+import { resolveImageUri } from '../utils/recipePhotos';
 
 type ParamList = {
   RecipeDetails: {
@@ -26,8 +29,9 @@ export const RecipeDetailsScreen = () => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
-  const [details, setDetails] = useState<Partial<Recipe> | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [details, setDetails] = useState<RecipeDetails | null>(null);
+  // A recipe that already carries ingredients renders at once, no spinner frame.
+  const [loading, setLoading] = useState<boolean>(!recipe.ingredients);
   const [error, setError] = useState<string | null>(null);
   const [headerHeight, setHeaderHeight] = useState(380);
 
@@ -45,31 +49,41 @@ export const RecipeDetailsScreen = () => {
   );
 
   const loadDetails = useCallback(() => {
-    if (recipe.ingredients && recipe.instructions) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
+    // The screen instance can be reused for another recipe (e.g. opened from the
+    // Favourites tab while this screen is already on top), so start from a clean slate.
+    setDetails(null);
     setError(null);
-    fetchMocktailDetails(recipe.id)
+    // Anything that already carries ingredients (a user recipe, or a drink whose
+    // details were merged from the cache) needs no request.
+    if (recipe.ingredients) {
+      setLoading(false);
+      return () => {};
+    }
+    let cancelled = false;
+    setLoading(true);
+    fetchDetailsCached(recipe.id)
       .then(data => {
+        if (cancelled) return;
         setDetails(data);
         setLoading(false);
       })
       .catch(() => {
+        if (cancelled) return;
         setError("Couldn't load this recipe. Check your connection and try again.");
         setLoading(false);
       });
-  }, [recipe.id, recipe.ingredients, recipe.instructions]);
+    return () => {
+      cancelled = true;
+    };
+  }, [recipe.id, recipe.ingredients]);
 
-  useEffect(() => {
-    loadDetails();
-  }, [loadDetails]);
+  useEffect(() => loadDetails(), [loadDetails]);
 
   const ingredientsToDisplay = details?.ingredients || recipe.ingredients || [];
-  const instructionsToDisplay = details?.instructions || recipe.instructions || 'No instructions available.';
-
-  const parseInstructions = splitInstructions;
+  const stepsToDisplay = splitInstructions(details?.instructions || recipe.instructions);
+  const tags = details?.tags || recipe.tags || [];
+  // Database drinks carry the tag line as their subtitle; showing it twice (text + chips) is noise.
+  const description = recipe.subtitle && recipe.subtitle !== tagsToSubtitle(tags) ? recipe.subtitle : '';
 
   const handleShare = () =>
     shareRecipe({
@@ -86,7 +100,7 @@ export const RecipeDetailsScreen = () => {
         onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
       >
         <View style={{ position: 'relative' }}>
-          <Animated.Image source={{ uri: recipe.imageUrl }} style={[styles.image, { opacity: imageOpacity }]} />
+          <Animated.Image source={{ uri: resolveImageUri(recipe.imageUrl) }} style={[styles.image, { opacity: imageOpacity }]} />
           <View style={{ position: 'absolute', top: insets.top + spacing.s, left: spacing.l, right: spacing.l, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' }} onPress={() => navigation.goBack()}>
                <ArrowLeftIcon size={24} color={colors.title} />
@@ -97,11 +111,19 @@ export const RecipeDetailsScreen = () => {
           <View style={[{ backgroundColor: colors.surface, padding: spacing.l, borderRadius: 16, marginTop: -40, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 15, elevation: 10 }]}>
             <View style={styles.titleContainer}>
               <Text style={[styles.title, { color: colors.title }]}>{recipe.title}</Text>
-              <Text style={[styles.subtitle, { color: colors.subtitle }]}>{recipe.subtitle}</Text>
+              {!!description && (
+                <Text style={[styles.subtitle, { color: colors.subtitle }]}>{description}</Text>
+              )}
             </View>
-            <View style={[styles.infoBadge, { backgroundColor: `${colors.activeBadgeBG}15`, marginBottom: 0, marginTop: spacing.m, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16 }]}>
-              <Text style={[styles.infoText, { color: colors.activeBadgeBG }]}>{recipe.category || 'Herbal'}</Text>
-            </View>
+            {tags.length > 0 && (
+              <View style={styles.tagRow}>
+                {tags.map(tag => (
+                  <View key={tag} style={[styles.infoBadge, { backgroundColor: `${colors.activeBadgeBG}15` }]}>
+                    <Text style={[styles.infoText, { color: colors.activeBadgeBG }]}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         </View>
       </View>
@@ -123,7 +145,7 @@ export const RecipeDetailsScreen = () => {
             <Text style={[styles.errorText, { color: colors.title }]}>{error}</Text>
             <TouchableOpacity
               style={[styles.retryBtn, { backgroundColor: colors.activeBadgeBG }]}
-              onPress={loadDetails}
+              onPress={() => loadDetails()}
               activeOpacity={0.8}
               accessibilityRole="button"
             >
@@ -152,7 +174,10 @@ export const RecipeDetailsScreen = () => {
             <View style={[styles.card, { backgroundColor: colors.surface }]}>
               <Text style={[styles.cardTitle, { color: colors.title }]}>Preparation Steps</Text>
               <View style={styles.stepsList}>
-                {parseInstructions(instructionsToDisplay).map((step, idx) => (
+                {stepsToDisplay.length === 0 && (
+                  <Text style={[styles.instructionsText, { color: colors.subtitle }]}>No steps written for this recipe.</Text>
+                )}
+                {stepsToDisplay.map((step, idx) => (
                   <View key={idx} style={styles.stepItem}>
                     <View style={[styles.stepBadge, { backgroundColor: colors.activeBadgeBG }]}>
                       <Text style={styles.stepNumber}>{idx + 1}</Text>
@@ -214,15 +239,20 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
   },
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: spacing.m,
+    gap: spacing.s,
+  },
   infoBadge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
-    borderRadius: 8,
-    marginBottom: spacing.l,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   infoText: {
-    fontWeight: '600',
+    fontWeight: '500',
   },
   card: {
     borderRadius: 14,

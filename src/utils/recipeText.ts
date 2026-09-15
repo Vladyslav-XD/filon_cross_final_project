@@ -45,7 +45,8 @@ export function buildShareMessage(recipe: ShareableRecipe): string {
     lines.push('', 'Instructions:', ...steps.map((s, i) => `${i + 1}. ${s}`));
   }
 
-  if (recipe.imageUrl) lines.push('', recipe.imageUrl);
+  // Only a web address is useful to the recipient; a photo stored on this phone is not.
+  if (recipe.imageUrl && /^https?:\/\//.test(recipe.imageUrl)) lines.push('', recipe.imageUrl);
   if (APP_STORE_URL) lines.push('', `Get Mocktail Finder: ${APP_STORE_URL}`);
 
   return lines.join('\n');

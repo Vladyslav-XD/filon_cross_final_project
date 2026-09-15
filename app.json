@@ -33,6 +33,16 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Mocktail Finder uses your photo library only to attach a picture to a recipe you create. Photos stay on your device.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "b9fdacfd-8320-4064-8684-0caa86509823"

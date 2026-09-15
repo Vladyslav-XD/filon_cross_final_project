@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ShuffleIcon, HeartIcon, ShareIcon, ArrowLeftIcon } from '../components/icons';
 import { useNavigation } from '@react-navigation/native';
 import { Badge } from '../components/Badge';
 import { spacing } from '../theme/spacing';
-import { fetchMocktails, fetchMocktailDetails } from '../api/api';
+import { RecipeDetails } from '../api/api';
+import { fetchDetailsCached } from '../api/detailsCache';
+import { fetchMocktails } from '../api/recipes';
 import { Recipe } from '../data/mockData';
+import { tagsToSubtitle } from '../utils/drinkTags';
+import { resolveImageUri } from '../utils/recipePhotos';
 import { useFavorites } from '../context/FavoritesContext';
 import { shareRecipe, splitInstructions } from '../utils/recipeText';
 import { useTheme } from '../context/ThemeContext';
@@ -18,7 +22,7 @@ const WINDOW_WIDTH = Dimensions.get('window').width;
 export const RandomScreen = () => {
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
-  const [details, setDetails] = useState<Partial<Recipe> | null>(null);
+  const [details, setDetails] = useState<Partial<RecipeDetails> | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [history, setHistory] = useState<Recipe[]>([]);
   const [headerHeight, setHeaderHeight] = useState(460);
@@ -29,6 +33,8 @@ export const RandomScreen = () => {
   const insets = useSafeAreaInsets();
   const customRecipes = useSelector((state: RootState) => state.myRecipes.recipes);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Guards against a slow earlier lookup overwriting the details of a newer pick.
+  const requestId = useRef(0);
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -58,23 +64,28 @@ export const RandomScreen = () => {
       setHistory(prev => [...prev, currentRecipe]);
     }
     setCurrentRecipe(randomRecipe);
+    setDetails(null);
+    const myRequest = ++requestId.current;
     
-    if (randomRecipe.ingredients && randomRecipe.instructions) {
+    if (randomRecipe.ingredients) {
       setDetails({
         ingredients: randomRecipe.ingredients,
-        instructions: randomRecipe.instructions,
+        instructions: randomRecipe.instructions || '',
+        tags: randomRecipe.tags,
       });
       setLoading(false);
       return;
     }
 
     try {
-      const recipeDetails = await fetchMocktailDetails(randomRecipe.id);
+      const recipeDetails = await fetchDetailsCached(randomRecipe.id);
+      if (myRequest !== requestId.current) return; // user already shuffled again
       setDetails(recipeDetails);
     } catch {
+      if (myRequest !== requestId.current) return;
       setDetails({});
     } finally {
-      setLoading(false);
+      if (myRequest === requestId.current) setLoading(false);
     }
   };
 
@@ -83,19 +94,24 @@ export const RandomScreen = () => {
       const prevRecipe = history[history.length - 1];
       setHistory(prev => prev.slice(0, -1));
       setCurrentRecipe(prevRecipe);
+      setDetails(null);
+      const myRequest = ++requestId.current;
       
-      if (prevRecipe.ingredients && prevRecipe.instructions) {
+      if (prevRecipe.ingredients) {
         setDetails({
           ingredients: prevRecipe.ingredients,
-          instructions: prevRecipe.instructions,
+          instructions: prevRecipe.instructions || '',
+          tags: prevRecipe.tags,
         });
         setLoading(false);
       } else {
         setLoading(true);
-        fetchMocktailDetails(prevRecipe.id).then(res => {
+        fetchDetailsCached(prevRecipe.id).then(res => {
+          if (myRequest !== requestId.current) return;
           setDetails(res);
           setLoading(false);
         }).catch(() => {
+          if (myRequest !== requestId.current) return;
           setDetails({});
           setLoading(false);
         });
@@ -141,6 +157,10 @@ export const RandomScreen = () => {
   const isFav = isFavorite(currentRecipe.id);
   const ingredientsToDisplay = details?.ingredients || [];
   const stepsToDisplay = parseInstructions(details?.instructions || '');
+  const tags = details?.tags || currentRecipe.tags || [];
+  // A user recipe shows its own description; a database drink shows its tags as chips below.
+  const description =
+    currentRecipe.subtitle && currentRecipe.subtitle !== tagsToSubtitle(tags) ? currentRecipe.subtitle : '';
 
   const handleShare = () =>
     shareRecipe({
@@ -158,7 +178,7 @@ export const RandomScreen = () => {
       >
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: currentRecipe.imageUrl }}
+            source={{ uri: resolveImageUri(currentRecipe.imageUrl) }}
             style={styles.heroImage}
             resizeMode="cover"
           />
@@ -174,11 +194,15 @@ export const RandomScreen = () => {
         <View style={{ paddingHorizontal: 12 }}>
           <View style={[styles.card, styles.titleCard, { backgroundColor: colors.surface, marginTop: -40, marginBottom: 0, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 15, elevation: 10 }]}>
             <Text style={[styles.recipeTitle, { color: colors.title }]}>{currentRecipe.title}</Text>
-            <Text style={[styles.recipeSubtitle, { color: colors.subtitle }]}>{currentRecipe.subtitle}</Text>
+            {!!description && (
+              <Text style={[styles.recipeSubtitle, { color: colors.subtitle }]}>{description}</Text>
+            )}
             <View style={styles.badgeWrapper}>
-              <View style={[{ backgroundColor: `${colors.activeBadgeBG}15`, paddingHorizontal: spacing.m, paddingVertical: 6, borderRadius: 16 }]}>
-                <Text style={[{ color: colors.activeBadgeBG, fontWeight: '500' }]}>Random Pick</Text>
-              </View>
+              {(tags.length > 0 ? tags : ['Random pick']).map(tag => (
+                <View key={tag} style={[{ backgroundColor: `${colors.activeBadgeBG}15`, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 }]}>
+                  <Text style={[{ color: colors.activeBadgeBG, fontWeight: '500' }]}>{tag}</Text>
+                </View>
+              ))}
             </View>
           </View>
         </View>
@@ -210,6 +234,9 @@ export const RandomScreen = () => {
               </View>
               <View style={[styles.card, { backgroundColor: colors.surface }]}>
                 <Text style={[styles.cardSectionTitle, { color: colors.title }]}>Preparation Steps</Text>
+                {stepsToDisplay.length === 0 && (
+                  <Text style={[styles.listText, { color: colors.subtitle }]}>No steps written for this recipe.</Text>
+                )}
                 {stepsToDisplay.map((step, index) => (
                   <View key={index} style={styles.stepItem}>
                     <View style={[styles.stepNumberCircle, { backgroundColor: colors.activeBadgeBG }]}>
@@ -333,7 +360,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.m,
   },
   badgeWrapper: {
-    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.s,
+    marginTop: spacing.s,
   },
   cardSectionTitle: {
     fontSize: 17,

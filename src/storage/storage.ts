@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export const STORAGE_KEYS = {
   favorites: '@mocktail-finder/favorites/v1',
   myRecipes: '@mocktail-finder/my-recipes/v1',
+  /** Per-drink details from TheCocktailDB (ingredients, instructions, derived tags). */
+  details: '@mocktail-finder/details/v1',
 } as const;
 
 export async function loadJson<T>(key: string, fallback: T): Promise<T> {

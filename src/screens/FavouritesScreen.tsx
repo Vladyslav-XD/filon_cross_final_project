@@ -10,15 +10,18 @@ import { Header } from '../components/Header';
 import { SCREENS } from '../constants/screens';
 import { useFavorites } from '../context/FavoritesContext';
 import { useTheme } from '../context/ThemeContext';
+import { withDetails } from '../api/recipes';
 
 export const FavouritesScreen = () => {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { favorites, toggleFavorite } = useFavorites();
-  const savedRecipes = favorites;
+  // Re-merge cached details so a favourite saved before its details arrived still gets a subtitle.
+  const savedRecipes = favorites.map(recipe => withDetails(recipe));
   const { colors } = useTheme();
 
   const onDiscoverPress = () => {
-    navigation.navigate(SCREENS.HOME_TAB);
+    // The list itself, not whatever recipe was last open in the Home tab.
+    navigation.navigate(SCREENS.HOME_TAB, { screen: SCREENS.MOCKTAIL_FINDER });
   };
 
   return (

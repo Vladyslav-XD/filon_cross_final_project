@@ -1,6 +1,12 @@
 import React, { createContext, useState, useContext, useEffect, useRef, useCallback, useMemo, ReactNode } from 'react';
 import { Recipe } from '../data/mockData';
 import { loadJson, saveJson, STORAGE_KEYS } from '../storage/storage';
+import { withDetails } from '../api/recipes';
+import { migrateRecipe } from '../store/store';
+
+/** Placeholder subtitle written by builds before tags existed (case varied between builds). */
+const isLegacySubtitle = (subtitle?: string) =>
+  (subtitle || '').trim().toLowerCase() === 'non-alcoholic mocktail';
 
 interface FavoritesContextType {
   favorites: Recipe[];
@@ -21,7 +27,14 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
     mounted.current = true;
     loadJson<Recipe[]>(STORAGE_KEYS.favorites, []).then(saved => {
       if (!mounted.current) return;
-      if (Array.isArray(saved)) setFavorites(saved);
+      if (Array.isArray(saved)) {
+        // Older favourites carry a placeholder subtitle; fill in tags from the details cache.
+        setFavorites(
+          saved.map(recipe =>
+            withDetails(migrateRecipe(isLegacySubtitle(recipe.subtitle) ? { ...recipe, subtitle: '' } : recipe))
+          )
+        );
+      }
       setHydrated(true);
     });
     return () => {

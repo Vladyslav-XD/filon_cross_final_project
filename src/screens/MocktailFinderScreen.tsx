@@ -10,14 +10,16 @@ import { Recipe } from '../data/mockData';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { SCREENS } from '../constants/screens';
-import { fetchMocktails } from '../api/api';
+import { fetchMocktails, fillInDetails } from '../api/recipes';
+import { CHARACTER_FILTERS, INGREDIENT_FILTERS, recipeHasIngredient } from '../constants/filters';
 import { useFavorites } from '../context/FavoritesContext';
 import { useTheme } from '../context/ThemeContext';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 
-const CATEGORIES = ['All', 'My Recipes', 'Refreshing', 'Fruity', 'Sparkling', 'Citrus', 'Sweet', 'Sour', 'Herbal', 'Spicy'];
-const INGREDIENTS = ['Mint', 'Lime', 'Berry', 'Citrus', 'Ginger', 'Cucumber', 'Tropical'];
+// "All" and "My Recipes" are pseudo-categories; the rest are real drink tags.
+const CATEGORIES = ['All', 'My Recipes', ...CHARACTER_FILTERS];
+const INGREDIENTS = INGREDIENT_FILTERS.map(f => f.label);
 
 export const MocktailFinderScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,6 +27,7 @@ export const MocktailFinderScreen = () => {
   const [activeIngredients, setActiveIngredients] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [fillingIn, setFillingIn] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [displayLimit, setDisplayLimit] = useState<number>(5);
 
@@ -34,21 +37,38 @@ export const MocktailFinderScreen = () => {
   const customRecipes = useSelector((state: RootState) => state.myRecipes.recipes);
 
   const loadRecipes = useCallback(() => {
+    let cancelled = false;
     setLoading(true);
     setError(null);
     fetchMocktails()
       .then(result => {
+        if (cancelled) return;
         setRecipes(result);
         setLoading(false);
+        // The list endpoint has no ingredients or tags. Fetch them once (cached on
+        // the device afterwards) and let cards fill in as batches arrive.
+        if (result.some(r => !r.tags)) {
+          setFillingIn(true);
+          fillInDetails(result, update => {
+            if (!cancelled) setRecipes(update);
+          }).finally(() => {
+            if (!cancelled) setFillingIn(false);
+          });
+        }
       })
       .catch(() => {
+        if (cancelled) return;
         setError("Couldn't load recipes. Check your internet connection and try again.");
         setLoading(false);
       });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    loadRecipes();
+    const cancel = loadRecipes();
+    return cancel;
   }, [loadRecipes]);
 
   useEffect(() => {
@@ -61,56 +81,31 @@ export const MocktailFinderScreen = () => {
     );
   }, []);
 
-  const getCategoryKeywords = (cat: string) => {
-    switch (cat) {
-      case 'Refreshing': return ['mint', 'cooler', 'water', 'ice', 'slush'];
-      case 'Fruity': return ['apple', 'peach', 'fruit', 'mango', 'banana', 'melon', 'punch', 'berry', 'cherry'];
-      case 'Sparkling': return ['sparkling', 'soda', 'fizz', 'tonic'];
-      case 'Citrus': return ['lemon', 'lime', 'orange', 'citrus', 'grapefruit'];
-      case 'Sweet': return ['chocolate', 'vanilla', 'sweet', 'sugar', 'syrup', 'candy'];
-      case 'Sour': return ['sour', 'lemon', 'lime'];
-      case 'Herbal': return ['mint', 'basil', 'rosemary', 'tea'];
-      case 'Spicy': return ['ginger', 'spice', 'pepper'];
-      default: return [];
-    }
-  };
-
   const allAvailableRecipes = useMemo(
     () => [...[...customRecipes].reverse(), ...recipes],
     [customRecipes, recipes]
   );
 
   const filteredRecipes = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
     return allAvailableRecipes.filter(recipe => {
-      const titleLower = recipe.title.toLowerCase();
-
-      if (searchQuery && !titleLower.includes(searchQuery.toLowerCase())) {
-        return false;
+      // Search matches the name or any ingredient ("ginger" finds Masala Chai).
+      if (query) {
+        const inTitle = recipe.title.toLowerCase().includes(query);
+        const inIngredients = (recipe.ingredients || []).some(line => line.toLowerCase().includes(query));
+        if (!inTitle && !inIngredients) return false;
       }
 
       if (activeCategory === 'My Recipes') {
-        const isCustom = customRecipes.some(cr => cr.id === recipe.id);
-        if (!isCustom) return false;
+        if (!customRecipes.some(cr => cr.id === recipe.id)) return false;
       } else if (activeCategory !== 'All') {
-        const keywords = getCategoryKeywords(activeCategory);
-        const matchesKeyword = keywords.some(kw => titleLower.includes(kw));
-
-        const charSum = recipe.title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const assignedCat = CATEGORIES[(charSum % (CATEGORIES.length - 1)) + 1];
-
-        if (!matchesKeyword && assignedCat !== activeCategory && recipe.category !== activeCategory) {
-          return false;
-        }
+        // Real tags only. A drink whose details have not arrived yet has no tags
+        // and is simply not shown until they do.
+        if (!recipe.tags || !recipe.tags.includes(activeCategory as any)) return false;
       }
 
       if (activeIngredients.length > 0) {
-        const matchesAnyIng = activeIngredients.some(ing => titleLower.includes(ing.toLowerCase()));
-        const charSum2 = recipe.title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) * 2;
-        const assignedIng = INGREDIENTS[charSum2 % INGREDIENTS.length];
-
-        if (!matchesAnyIng && !activeIngredients.includes(assignedIng)) {
-          return false;
-        }
+        if (!activeIngredients.some(label => recipeHasIngredient(recipe, label))) return false;
       }
 
       return true;
@@ -178,11 +173,13 @@ export const MocktailFinderScreen = () => {
           </View>
         </View>
         {filteredRecipes.length === 0 && !loading && !error && (
-          <Text style={[styles.emptyText, { color: colors.subtitle }]}>No recipes match these filters.</Text>
+          <Text style={[styles.emptyText, { color: colors.subtitle }]}>
+            {fillingIn ? 'Loading drink details…' : 'No recipes match these filters.'}
+          </Text>
         )}
       </View>
     </>
-  ), [searchQuery, activeCategory, activeIngredients, filteredRecipes.length, loading, error, colors, toggleIngredient, handleClearIngredients, handleNavigateRandom]);
+  ), [searchQuery, activeCategory, activeIngredients, filteredRecipes.length, loading, fillingIn, error, colors, toggleIngredient, handleClearIngredients, handleNavigateRandom]);
 
   const renderFooter = useCallback(() => {
     if (filteredRecipes.length > displayLimit) {
@@ -231,7 +228,7 @@ export const MocktailFinderScreen = () => {
           <Text style={[styles.errorText, { color: colors.title }]}>{error}</Text>
           <TouchableOpacity
             style={[styles.retryBtn, { backgroundColor: colors.activeBadgeBG }]}
-            onPress={loadRecipes}
+            onPress={() => loadRecipes()}
             activeOpacity={0.8}
             accessibilityRole="button"
           >

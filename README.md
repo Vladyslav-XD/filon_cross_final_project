@@ -11,10 +11,11 @@ UX/UI Designer, UX Writer & React Native Developer. I worked across the experien
 ## Product experience
 
 - Discover featured recipes and get a surprise recommendation.
-- Search and filter the collection.
-- Review recipe details in a mobile-first flow.
+- Search by name or ingredient; filter by character (Iced, Hot, Citrus, Creamy…) or by what you have at hand.
+- Every drink carries character tags derived from its ingredients and instructions (`src/utils/drinkTags.ts`) — the same words power the card subtitles and the filters.
+- Review recipe details in a mobile-first flow (details are cached on the device after the first load).
 - Save favourites for quick return.
-- Add a personal recipe with live validation.
+- Add a personal recipe with a photo from your library and live validation.
 - Use the app in light or dark mode.
 
 ## Selected UX decisions
