@@ -261,3 +261,15 @@ export const ArrowLeftIcon = ({ size = 24, color = '#FFFFFF', ...props }: IconPr
     <Path d="M15 18L9 12L15 6" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
+
+export const TrashIcon = ({ size = 20, color = '#99A1AF', ...props }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...props}>
+    <Path
+      d="M4 7H20M10 11V17M14 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 7V4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);

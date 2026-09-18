@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Animated, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Animated, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { RouteProp, useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
 import { spacing } from '../theme/spacing';
 import { Recipe } from '../data/mockData';
-import { HeartIcon, ShareIcon, ArrowLeftIcon } from '../components/icons';
+import { HeartIcon, ShareIcon, ArrowLeftIcon, TrashIcon } from '../components/icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFavorites } from '../context/FavoritesContext';
 import { RecipeDetails } from '../api/api';
@@ -11,7 +12,9 @@ import { fetchDetailsCached } from '../api/detailsCache';
 import { useTheme } from '../context/ThemeContext';
 import { shareRecipe, splitInstructions } from '../utils/recipeText';
 import { tagsToSubtitle } from '../utils/drinkTags';
-import { resolveImageUri } from '../utils/recipePhotos';
+import { resolveImageUri, deleteRecipePhoto } from '../utils/recipePhotos';
+import { removeRecipe } from '../store/myRecipesSlice';
+import { RootState } from '../store/store';
 
 type ParamList = {
   RecipeDetails: {
@@ -25,7 +28,12 @@ export const RecipeDetailsScreen = () => {
   const { recipe } = route.params;
   const { isFavorite, toggleFavorite } = useFavorites();
   const isFav = isFavorite(recipe.id);
-  
+  const dispatch = useDispatch();
+  // Only the user's own recipes can be deleted; TheCocktailDB drinks are not ours to remove.
+  const isOwnRecipe = useSelector((state: RootState) =>
+    state.myRecipes.recipes.some(own => own.id === recipe.id)
+  );
+
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -92,6 +100,23 @@ export const RecipeDetailsScreen = () => {
       instructions: details?.instructions || recipe.instructions,
       imageUrl: recipe.imageUrl,
     });
+
+  const handleDelete = () =>
+    Alert.alert('Delete this recipe?', `"${recipe.title}" and its photo will be removed from this device.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          // Drop the photo file first: once the recipe is out of the store nothing
+          // points at the file any more, and it would stay behind forever.
+          await deleteRecipePhoto(recipe.imageUrl);
+          if (isFav) toggleFavorite(recipe);
+          dispatch(removeRecipe(recipe.id));
+          navigation.goBack();
+        },
+      },
+    ]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -199,6 +224,19 @@ export const RecipeDetailsScreen = () => {
               <ShareIcon size={20} color={colors.title} />
               <Text style={[styles.shareBtnText, { color: colors.title }]}>Share Recipe</Text>
             </TouchableOpacity>
+
+            {isOwnRecipe && (
+              <TouchableOpacity
+                style={[styles.deleteBtn, { borderColor: colors.error }]}
+                onPress={handleDelete}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Delete this recipe"
+              >
+                <TrashIcon size={20} color={colors.error} />
+                <Text style={[styles.deleteBtnText, { color: colors.error }]}>Delete Recipe</Text>
+              </TouchableOpacity>
+            )}
           </>
         )}
       </ScrollView>
@@ -338,9 +376,26 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     borderWidth: 1,
-    marginBottom: spacing.xxl,
+    // The scroll view already pads 100 at the bottom, so this only has to separate
+    // Share from the Delete button that follows it on a user's own recipe.
+    marginBottom: spacing.m,
   },
   shareBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: spacing.s,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    // Outlined, not filled: destructive, but not the loudest thing on the screen.
+    backgroundColor: 'transparent',
+  },
+  deleteBtnText: {
     fontSize: 16,
     fontWeight: '600',
     marginLeft: spacing.s,

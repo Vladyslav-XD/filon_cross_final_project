@@ -36,7 +36,7 @@ export const lightColors: ThemeColors = {
   background: '#ffffff',
   iconBG: '#F3F4F6',
   surface: '#ffffff',
-  error: '#ff0000',
+  error: '#DC2626',
 };
 
 export const darkColors: ThemeColors = {
