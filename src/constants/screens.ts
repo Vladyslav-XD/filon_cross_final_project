@@ -8,4 +8,6 @@ export const SCREENS = {
   ADD_RECIPE_TAB: 'AddRecipeTab',
   MOCKTAIL_FINDER: 'MocktailFinder',
   RECIPE_DETAILS: 'RecipeDetails',
+  // Same screen component as the Add Recipe tab, pushed on top of a recipe when editing it.
+  EDIT_RECIPE: 'EditRecipe',
 };

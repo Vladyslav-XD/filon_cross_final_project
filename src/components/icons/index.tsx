@@ -262,6 +262,18 @@ export const ArrowLeftIcon = ({ size = 24, color = '#FFFFFF', ...props }: IconPr
   </Svg>
 );
 
+export const PencilIcon = ({ size = 20, color = '#99A1AF', ...props }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...props}>
+    <Path
+      d="M16.5 3.5C16.8978 3.10218 17.4374 2.87868 18 2.87868C18.5626 2.87868 19.1022 3.10218 19.5 3.5C19.8978 3.89782 20.1213 4.43739 20.1213 5C20.1213 5.56261 19.8978 6.10218 19.5 6.5L7 19L3 20L4 16L16.5 3.5Z"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
 export const TrashIcon = ({ size = 20, color = '#99A1AF', ...props }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...props}>
     <Path

@@ -11,6 +11,8 @@ const isLegacySubtitle = (subtitle?: string) =>
 interface FavoritesContextType {
   favorites: Recipe[];
   toggleFavorite: (recipe: Recipe) => void;
+  /** Refreshes the saved copy of a recipe that was edited; no-op if it is not a favourite. */
+  updateFavorite: (recipe: Recipe) => void;
   isFavorite: (id: string) => boolean;
   /** true once favorites have been read from device storage */
   hydrated: boolean;
@@ -54,11 +56,17 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
+  const updateFavorite = useCallback((recipe: Recipe) => {
+    setFavorites(prev =>
+      prev.map(fav => (fav.id === recipe.id ? { ...recipe, isFavorite: true } : fav))
+    );
+  }, []);
+
   const isFavorite = useCallback((id: string) => favorites.some(fav => fav.id === id), [favorites]);
 
   const value = useMemo(
-    () => ({ favorites, toggleFavorite, isFavorite, hydrated }),
-    [favorites, toggleFavorite, isFavorite, hydrated]
+    () => ({ favorites, toggleFavorite, updateFavorite, isFavorite, hydrated }),
+    [favorites, toggleFavorite, updateFavorite, isFavorite, hydrated]
   );
 
   return <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>;

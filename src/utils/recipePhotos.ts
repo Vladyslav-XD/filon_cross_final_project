@@ -49,6 +49,9 @@ export async function persistRecipePhoto(tempUri: string, recipeId: string): Pro
   const dir = photoDir();
   await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
   const name = `${recipeId}.jpg`;
+  // Editing a recipe reuses its id, so the destination may already exist — a copy
+  // onto an existing file fails on iOS, so clear the way first.
+  await FileSystem.deleteAsync(`${dir}${name}`, { idempotent: true });
   await FileSystem.copyAsync({ from: tempUri, to: `${dir}${name}` });
   return `${SCHEME}${name}`;
 }

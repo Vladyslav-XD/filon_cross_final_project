@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useDispatch } from 'react-redux';
-import { useNavigation } from '@react-navigation/native';
-import { addRecipe } from '../store/myRecipesSlice';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { addRecipe, updateRecipe } from '../store/myRecipesSlice';
 import { Badge } from '../components/Badge';
 import { Header } from '../components/Header';
 import { useTheme } from '../context/ThemeContext';
@@ -10,7 +10,10 @@ import { spacing } from '../theme/spacing';
 import { AddRecipeIcon, XIcon } from '../components/icons';
 import { SCREENS } from '../constants/screens';
 import { ALL_TAGS, DrinkTag, tagsToSubtitle } from '../utils/drinkTags';
-import { pickRecipePhoto, persistRecipePhoto } from '../utils/recipePhotos';
+import { pickRecipePhoto, persistRecipePhoto, deleteRecipePhoto, isRecipePhoto, resolveImageUri } from '../utils/recipePhotos';
+import { splitInstructions } from '../utils/recipeText';
+import { useFavorites } from '../context/FavoritesContext';
+import { Recipe } from '../data/mockData';
 
 /** Shown when the user adds no photo of their own. */
 const DEFAULT_IMAGE_URL = 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=600&auto=format&fit=crop';
@@ -21,20 +24,44 @@ interface Ingredient {
   amount: string;
 }
 
+/** `stored` is a photo already in app storage (editing); `new` is a fresh pick, not copied yet. */
+type Photo = { kind: 'stored'; ref: string } | { kind: 'new'; uri: string } | null;
+
+type ParamList = {
+  EditRecipe: { recipe?: Recipe } | undefined;
+};
+
 export const AddRecipeScreen = () => {
   const { colors } = useTheme();
   const dispatch = useDispatch();
   const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<ParamList, 'EditRecipe'>>();
+  const { updateFavorite } = useFavorites();
+  /** Set when the screen was pushed from a recipe; the Add Recipe tab leaves it undefined. */
+  const editing = route.params?.recipe;
 
-  const [title, setTitle] = useState('');
-  const [subtitle, setSubtitle] = useState('');
-  const [tags, setTags] = useState<DrinkTag[]>([]);
-  const [ingredients, setIngredients] = useState<Ingredient[]>([{ name: '', amount: '' }]);
-  const [steps, setSteps] = useState<string[]>(['']);
-  /** Temporary URI from the picker; copied into app storage only on save. */
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [title, setTitle] = useState(editing?.title ?? '');
+  const [subtitle, setSubtitle] = useState(editing?.subtitle ?? '');
+  const [tags, setTags] = useState<DrinkTag[]>((editing?.tags as DrinkTag[]) ?? []);
+  // A saved ingredient is one line ("50 ml lime juice"); splitting it back into amount and
+  // name would only guess wrong, so the whole line goes into the name field.
+  const [ingredients, setIngredients] = useState<Ingredient[]>(
+    editing?.ingredients?.length
+      ? editing.ingredients.map(line => ({ name: line, amount: '' }))
+      : [{ name: '', amount: '' }]
+  );
+  const [steps, setSteps] = useState<string[]>(() => {
+    const saved = splitInstructions(editing?.instructions);
+    return saved.length ? saved : [''];
+  });
+  /** Only the user's own photo counts; the stock fallback image is not one. */
+  const [photo, setPhoto] = useState<Photo>(
+    editing && isRecipePhoto(editing.imageUrl) ? { kind: 'stored', ref: editing.imageUrl } : null
+  );
   const [saving, setSaving] = useState(false);
   const [picking, setPicking] = useState(false);
+
+  const photoPreviewUri = photo ? (photo.kind === 'stored' ? resolveImageUri(photo.ref) : photo.uri) : null;
 
   const toggleTag = (tag: DrinkTag) => {
     setTags(prev => {
@@ -75,7 +102,7 @@ export const AddRecipeScreen = () => {
     setPicking(true);
     try {
       const uri = await pickRecipePhoto();
-      if (uri) setPhotoUri(uri);
+      if (uri) setPhoto({ kind: 'new', uri });
     } catch {
       Alert.alert("Couldn't open your photos", 'Please try again.');
     } finally {
@@ -89,7 +116,7 @@ export const AddRecipeScreen = () => {
     setTags([]);
     setIngredients([{ name: '', amount: '' }]);
     setSteps(['']);
-    setPhotoUri(null);
+    setPhoto(null);
   };
 
   const handleSaveRecipe = async () => {
@@ -104,18 +131,24 @@ export const AddRecipeScreen = () => {
     }
 
     const validSteps = steps.filter(s => s.trim() !== '');
-    const id = Date.now().toString();
+    // Editing keeps the id, so the photo file name stays the same too.
+    const id = editing ? editing.id : Date.now().toString();
 
     setSaving(true);
     let imageUrl = DEFAULT_IMAGE_URL;
-    if (photoUri) {
+    if (photo?.kind === 'stored') {
+      imageUrl = photo.ref;
+    } else if (photo?.kind === 'new') {
       try {
-        imageUrl = await persistRecipePhoto(photoUri, id);
+        imageUrl = await persistRecipePhoto(photo.uri, id);
       } catch {
         setSaving(false);
         Alert.alert("Couldn't save the photo", 'The recipe was not saved. Please try again.');
         return;
       }
+    } else if (editing && isRecipePhoto(editing.imageUrl)) {
+      // The photo was removed in the form: drop the file, fall back to the stock image.
+      await deleteRecipePhoto(editing.imageUrl);
     }
 
     const newRecipe = {
@@ -124,12 +157,22 @@ export const AddRecipeScreen = () => {
       subtitle: subtitle.trim() || tagsToSubtitle(tags),
       tags,
       imageUrl,
-      isFavorite: false,
+      isFavorite: editing?.isFavorite ?? false,
       ingredients: validIngredients.map(i => `${i.amount} ${i.name}`.trim()),
       // Each step ends with its own punctuation, so the recipe screen splits the text back into the same steps.
       instructions: validSteps.map(s => (/[.!?]$/.test(s.trim()) ? s.trim() : `${s.trim()}.`)).join(' '),
-      duration: '5 min',
+      duration: editing?.duration ?? '5 min',
     };
+
+    if (editing) {
+      dispatch(updateRecipe(newRecipe));
+      // A favourited copy would otherwise keep showing the old name and photo.
+      updateFavorite(newRecipe);
+      setSaving(false);
+      // Straight back to the recipe, which reads the fresh version from the store.
+      navigation.goBack();
+      return;
+    }
 
     dispatch(addRecipe(newRecipe));
     setSaving(false);
@@ -150,7 +193,8 @@ export const AddRecipeScreen = () => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Header
-        title="Add Recipe"
+        title={editing ? 'Edit Recipe' : 'Add Recipe'}
+        onBack={editing ? () => navigation.goBack() : undefined}
       />
 
       <KeyboardAvoidingView
@@ -167,9 +211,9 @@ export const AddRecipeScreen = () => {
 
         <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: colors.title }]}>Photo (Optional)</Text>
-          {photoUri ? (
+          {photoPreviewUri ? (
             <View>
-              <Image source={{ uri: photoUri }} style={[styles.photoPreview, { borderColor: colors.badgeBorder }]} />
+              <Image source={{ uri: photoPreviewUri }} style={[styles.photoPreview, { borderColor: colors.badgeBorder }]} />
               <View style={styles.photoActions}>
                 <TouchableOpacity
                   style={[styles.photoActionBtn, { borderColor: colors.badgeBorder, backgroundColor: colors.surface }]}
@@ -180,7 +224,7 @@ export const AddRecipeScreen = () => {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.photoActionBtn, { borderColor: colors.badgeBorder, backgroundColor: colors.surface }]}
-                  onPress={() => setPhotoUri(null)}
+                  onPress={() => setPhoto(null)}
                   accessibilityRole="button"
                 >
                   <Text style={[styles.photoActionText, { color: colors.title }]}>Remove</Text>
@@ -312,7 +356,9 @@ export const AddRecipeScreen = () => {
           activeOpacity={0.8}
           disabled={saving}
         >
-          <Text style={styles.saveButtonText}>{saving ? 'Saving…' : 'Save Recipe'}</Text>
+          <Text style={styles.saveButtonText}>
+            {saving ? 'Saving…' : editing ? 'Save Changes' : 'Save Recipe'}
+          </Text>
         </TouchableOpacity>
 
       </ScrollView>

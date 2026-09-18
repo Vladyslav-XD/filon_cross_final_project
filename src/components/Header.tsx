@@ -5,15 +5,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { fonts } from '../theme/typography';
-import { MoonIcon, SunIcon } from './icons';
+import { MoonIcon, SunIcon, ArrowLeftIcon } from './icons';
 import { AnimatedMartiniIcon } from './AnimatedMartiniIcon';
 
 interface HeaderProps {
   title: string;
   subtitle?: string;
+  /** Shows a back arrow on the left. Only screens pushed on top of another one pass this. */
+  onBack?: () => void;
 }
 
-export const Header = ({ title, subtitle }: HeaderProps) => {
+export const Header = ({ title, subtitle, onBack }: HeaderProps) => {
   const { theme, toggleTheme, colors } = useTheme();
 
   const gradientColors = theme === 'light'
@@ -31,9 +33,20 @@ export const Header = ({ title, subtitle }: HeaderProps) => {
         <View style={styles.headerContent}>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-              <View style={{ marginRight: 8, marginTop: -22 }}>
-                <AnimatedMartiniIcon size={24} color="#FFFFFF" disablePulsing />
-              </View>
+              {onBack ? (
+                <TouchableOpacity
+                  style={styles.backButton}
+                  onPress={onBack}
+                  accessibilityRole="button"
+                  accessibilityLabel="Go back"
+                >
+                  <ArrowLeftIcon size={22} color="#FFFFFF" />
+                </TouchableOpacity>
+              ) : (
+                <View style={{ marginRight: 8, marginTop: -22 }}>
+                  <AnimatedMartiniIcon size={24} color="#FFFFFF" disablePulsing />
+                </View>
+              )}
               <Text style={[styles.headerTitle, { color: '#FFFFFF', marginBottom: 0, marginTop: 4 }]}>{title}</Text>
             </View>
             {!!subtitle && (
@@ -74,6 +87,15 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 16,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.s,
   },
   themeToggle: {
     padding: spacing.s,

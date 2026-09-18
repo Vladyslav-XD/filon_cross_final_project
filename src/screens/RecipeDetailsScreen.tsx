@@ -4,7 +4,8 @@ import { RouteProp, useNavigation, useRoute, useFocusEffect } from '@react-navig
 import { useDispatch, useSelector } from 'react-redux';
 import { spacing } from '../theme/spacing';
 import { Recipe } from '../data/mockData';
-import { HeartIcon, ShareIcon, ArrowLeftIcon, TrashIcon } from '../components/icons';
+import { HeartIcon, ShareIcon, ArrowLeftIcon, TrashIcon, PencilIcon } from '../components/icons';
+import { SCREENS } from '../constants/screens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFavorites } from '../context/FavoritesContext';
 import { RecipeDetails } from '../api/api';
@@ -24,15 +25,18 @@ type ParamList = {
 
 export const RecipeDetailsScreen = () => {
   const route = useRoute<RouteProp<ParamList, 'RecipeDetails'>>();
-  const navigation = useNavigation();
-  const { recipe } = route.params;
+  const navigation = useNavigation<any>();
+  const routeRecipe = route.params.recipe;
+  const dispatch = useDispatch();
+  // The store copy is the live one, so an edit shows here the moment it is saved.
+  // Only the user's own recipes are in it — TheCocktailDB drinks are not ours to change.
+  const ownRecipe = useSelector((state: RootState) =>
+    state.myRecipes.recipes.find(own => own.id === routeRecipe.id)
+  );
+  const isOwnRecipe = !!ownRecipe;
+  const recipe = ownRecipe ?? routeRecipe;
   const { isFavorite, toggleFavorite } = useFavorites();
   const isFav = isFavorite(recipe.id);
-  const dispatch = useDispatch();
-  // Only the user's own recipes can be deleted; TheCocktailDB drinks are not ours to remove.
-  const isOwnRecipe = useSelector((state: RootState) =>
-    state.myRecipes.recipes.some(own => own.id === recipe.id)
-  );
 
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -226,16 +230,28 @@ export const RecipeDetailsScreen = () => {
             </TouchableOpacity>
 
             {isOwnRecipe && (
-              <TouchableOpacity
-                style={[styles.deleteBtn, { borderColor: colors.error }]}
-                onPress={handleDelete}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="Delete this recipe"
-              >
-                <TrashIcon size={20} color={colors.error} />
-                <Text style={[styles.deleteBtnText, { color: colors.error }]}>Delete Recipe</Text>
-              </TouchableOpacity>
+              <View style={styles.ownerActions}>
+                <TouchableOpacity
+                  style={[styles.ownerBtn, { borderColor: colors.badgeBorder, backgroundColor: colors.surface }]}
+                  onPress={() => navigation.navigate(SCREENS.EDIT_RECIPE, { recipe })}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit this recipe"
+                >
+                  <PencilIcon size={18} color={colors.title} />
+                  <Text style={[styles.ownerBtnText, { color: colors.title }]}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.ownerBtn, { borderColor: colors.error }]}
+                  onPress={handleDelete}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Delete this recipe"
+                >
+                  <TrashIcon size={18} color={colors.error} />
+                  <Text style={[styles.ownerBtnText, { color: colors.error }]}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </>
         )}
@@ -385,7 +401,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: spacing.s,
   },
-  deleteBtn: {
+  // Edit and Delete belong to the recipe's owner and read as one pair, apart from
+  // Favourites and Share above them.
+  ownerActions: {
+    flexDirection: 'row',
+    gap: spacing.m,
+  },
+  ownerBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -395,7 +418,7 @@ const styles = StyleSheet.create({
     // Outlined, not filled: destructive, but not the loudest thing on the screen.
     backgroundColor: 'transparent',
   },
-  deleteBtnText: {
+  ownerBtnText: {
     fontSize: 16,
     fontWeight: '600',
     marginLeft: spacing.s,

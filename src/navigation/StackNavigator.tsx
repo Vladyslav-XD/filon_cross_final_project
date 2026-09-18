@@ -3,6 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { MocktailFinderScreen } from '../screens/MocktailFinderScreen';
 import { RecipeDetailsScreen } from '../screens/RecipeDetailsScreen';
 import { RandomScreen } from '../screens/RandomScreen';
+import { AddRecipeScreen } from '../screens/AddRecipeScreen';
 import { SCREENS } from '../constants/screens';
 import { colors } from '../theme/colors';
 
@@ -38,6 +39,12 @@ export const StackNavigator = () => {
       <Stack.Screen
         name={SCREENS.RECIPE_DETAILS}
         component={RecipeDetailsScreen}
+        options={{ headerShown: false }}
+      />
+      {/* The Add Recipe tab reuses this screen; here it is pushed with a recipe to edit. */}
+      <Stack.Screen
+        name={SCREENS.EDIT_RECIPE}
+        component={AddRecipeScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
