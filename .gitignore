@@ -40,6 +40,9 @@ yarn-error.*
 /ios
 /android
 
+# working files for the store listing (screenshots, drafts) - not part of the app
+Claude outputs/
+
 # env files with API keys
 .env
 .env.*
