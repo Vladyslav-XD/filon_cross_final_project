@@ -2,6 +2,13 @@
 
 Append one entry per finished task: date · task · what changed · files · how verified.
 
+## 2026-09-18 · task 4 — remember the theme (Claude Code)
+- `ThemeContext` now holds three modes: `system | light | dark`. `theme` (what is drawn) stays what every screen reads, so no screen changed — only `Header` knows about modes. Saved under `STORAGE_KEYS.theme` (`@mocktail-finder/theme`).
+- `loadThemeMode()` is awaited in `App.tsx` inside the same `Promise.all` as the store and the details cache, and passed to `ThemeProvider` as `initialMode` — the app opens in the saved theme with no flash.
+- **Way back to "system":** press and hold the header toggle. A tap switches light ↔ dark explicitly (that is what a tap always did); a long press hands control back to iOS. While the app is following the system, a small white dot sits on the toggle — without it "system" and "light" would look identical. A third tap state was the alternative, but it makes the everyday light ↔ dark tap a three-way cycle, which is worse for the common case.
+- Files: `src/context/ThemeContext.tsx`, `src/components/Header.tsx`, `src/storage/storage.ts`, `App.tsx`.
+- Verified: `npx tsc --noEmit` clean, `npx expo export --platform ios` builds, app runs in the simulator and the system dot shows on the toggle. Persistence across a restart still wants one human check.
+
 ## 2026-09-18 · task 3 — camera for recipe photos (Claude Code)
 - `app.json`: `cameraPermission` text set on the `expo-image-picker` plugin ("Mocktail Finder uses the camera only to take a picture for a recipe you create. Photos stay on your device."); `photosPermission` unchanged, `microphonePermission` still false. This string is what iOS shows in the permission dialog, so it ships with the next build — a JS reload will not pick it up.
 - `takeRecipePhoto()` in `src/utils/recipePhotos.ts`: `requestCameraPermissionsAsync()` then `launchCameraAsync({ quality: 0.7, exif: false })`. On refusal it explains and offers "Open Settings" (`Linking.openSettings()`) — after the first refusal iOS never asks again, so Settings is the only way back.

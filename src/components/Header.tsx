@@ -16,7 +16,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ title, subtitle, onBack }: HeaderProps) => {
-  const { theme, toggleTheme, colors } = useTheme();
+  const { theme, mode, toggleTheme, useSystemTheme, colors } = useTheme();
 
   const gradientColors = theme === 'light'
     ? ['#00BBA7', '#0092B8'] as const
@@ -53,8 +53,17 @@ export const Header = ({ title, subtitle, onBack }: HeaderProps) => {
               <Text style={[styles.headerSubtitle, { color: '#FFFFFF' }]}>{subtitle}</Text>
             )}
           </View>
-          <TouchableOpacity style={styles.themeToggle} onPress={toggleTheme} accessibilityRole="button" accessibilityLabel={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}>
+          <TouchableOpacity
+            style={styles.themeToggle}
+            onPress={toggleTheme}
+            onLongPress={useSystemTheme}
+            accessibilityRole="button"
+            accessibilityLabel={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
+            accessibilityHint="Press and hold to follow the system appearance"
+          >
             {theme === 'light' ? <MoonIcon size={20} color="#FFFFFF" /> : <SunIcon size={20} color="#FFFFFF" />}
+            {/* A dot means "following the system"; it disappears once the user picks a theme. */}
+            {mode === 'system' && <View style={styles.systemDot} />}
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -101,6 +110,15 @@ const styles = StyleSheet.create({
     padding: spacing.s,
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 20,
+  },
+  systemDot: {
+    position: 'absolute',
+    right: 6,
+    bottom: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFFFFF',
   },
   themeToggleText: {
     fontSize: 24,

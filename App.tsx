@@ -12,7 +12,7 @@ import { Sora_600SemiBold } from '@expo-google-fonts/sora/600SemiBold';
 import { Sora_700Bold } from '@expo-google-fonts/sora/700Bold';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { FavoritesProvider } from './src/context/FavoritesContext';
-import { ThemeProvider } from './src/context/ThemeContext';
+import { ThemeProvider, ThemeMode, loadThemeMode } from './src/context/ThemeContext';
 import { store, hydrateStore } from './src/store/store';
 import { loadDetailsCache } from './src/api/detailsCache';
 import { SplashScreen } from './src/screens/SplashScreen';
@@ -20,6 +20,7 @@ import { SplashScreen } from './src/screens/SplashScreen';
 export default function App() {
   const [splashVisible, setSplashVisible] = useState(true);
   const [storeReady, setStoreReady] = useState(false);
+  const [themeMode, setThemeMode] = useState<ThemeMode>('system');
   // Brand font for the wordmark. If loading fails we still start (system font fallback)
   // rather than leaving the user on the splash forever.
   const [fontsLoaded, fontError] = useFonts({ Sora_600SemiBold, Sora_700Bold });
@@ -27,10 +28,15 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    // Favourites, user recipes and the drink-details cache are read while the splash plays.
-    Promise.all([hydrateStore(), loadDetailsCache()]).finally(() => {
-      if (!cancelled) setStoreReady(true);
-    });
+    // Favourites, user recipes, the drink-details cache and the saved theme are all
+    // read while the splash plays, so the app opens in its final state.
+    Promise.all([hydrateStore(), loadDetailsCache(), loadThemeMode()])
+      .then(([, , savedMode]) => {
+        if (!cancelled) setThemeMode(savedMode);
+      })
+      .finally(() => {
+        if (!cancelled) setStoreReady(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -46,7 +52,7 @@ export default function App() {
           <SplashScreen ready={storeReady && fontsReady} onFinish={handleSplashFinish} />
         ) : (
           <Provider store={store}>
-            <ThemeProvider>
+            <ThemeProvider initialMode={themeMode}>
               <FavoritesProvider>
                 <NavigationContainer>
                   <TabNavigator />

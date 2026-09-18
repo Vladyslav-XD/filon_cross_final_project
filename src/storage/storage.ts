@@ -5,6 +5,8 @@ export const STORAGE_KEYS = {
   myRecipes: '@mocktail-finder/my-recipes/v1',
   /** Per-drink details from TheCocktailDB (ingredients, instructions, derived tags). */
   details: '@mocktail-finder/details/v1',
+  /** Appearance choice: 'system' | 'light' | 'dark'. */
+  theme: '@mocktail-finder/theme',
 } as const;
 
 export async function loadJson<T>(key: string, fallback: T): Promise<T> {
