@@ -9,6 +9,7 @@
  */
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
+import { Alert, Linking } from 'react-native';
 
 const SCHEME = 'recipe-photo:';
 const DIR_NAME = 'recipe-photos/';
@@ -40,6 +41,30 @@ export async function pickRecipePhoto(): Promise<string | null> {
     quality: 0.7,
     exif: false,
   });
+  if (result.canceled || !result.assets || result.assets.length === 0) return null;
+  return result.assets[0].uri;
+}
+
+/**
+ * Opens the camera. Resolves with a temporary file URI, or null if the user
+ * cancelled or refused access. Unlike the library picker this does need a
+ * permission: iOS asks once, and after a refusal only Settings can undo it,
+ * so that is what the alert points at.
+ */
+export async function takeRecipePhoto(): Promise<string | null> {
+  const permission = await ImagePicker.requestCameraPermissionsAsync();
+  if (!permission.granted) {
+    Alert.alert(
+      'Camera access is off',
+      'To take a photo for your recipe, turn on Camera for Mocktail Finder in Settings.',
+      [
+        { text: 'Not now', style: 'cancel' },
+        { text: 'Open Settings', onPress: () => Linking.openSettings() },
+      ]
+    );
+    return null;
+  }
+  const result = await ImagePicker.launchCameraAsync({ quality: 0.7, exif: false });
   if (result.canceled || !result.assets || result.assets.length === 0) return null;
   return result.assets[0].uri;
 }

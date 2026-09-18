@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Image, ActionSheetIOS } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { addRecipe, updateRecipe } from '../store/myRecipesSlice';
@@ -10,7 +10,7 @@ import { spacing } from '../theme/spacing';
 import { AddRecipeIcon, XIcon } from '../components/icons';
 import { SCREENS } from '../constants/screens';
 import { ALL_TAGS, DrinkTag, tagsToSubtitle } from '../utils/drinkTags';
-import { pickRecipePhoto, persistRecipePhoto, deleteRecipePhoto, isRecipePhoto, resolveImageUri } from '../utils/recipePhotos';
+import { pickRecipePhoto, takeRecipePhoto, persistRecipePhoto, deleteRecipePhoto, isRecipePhoto, resolveImageUri } from '../utils/recipePhotos';
 import { splitInstructions } from '../utils/recipeText';
 import { useFavorites } from '../context/FavoritesContext';
 import { Recipe } from '../data/mockData';
@@ -97,17 +97,33 @@ export const AddRecipeScreen = () => {
     setSteps(steps.filter((_, i) => i !== index));
   };
 
-  const handlePickPhoto = async () => {
+  const runPicker = async (open: () => Promise<string | null>, failureTitle: string) => {
     if (picking) return; // a second tap while the picker is opening would orphan the first call
     setPicking(true);
     try {
-      const uri = await pickRecipePhoto();
+      const uri = await open();
       if (uri) setPhoto({ kind: 'new', uri });
     } catch {
-      Alert.alert("Couldn't open your photos", 'Please try again.');
+      Alert.alert(failureTitle, 'Please try again.');
     } finally {
       setPicking(false);
     }
+  };
+
+  const handleAddPhoto = () => {
+    if (picking) return;
+    if (Platform.OS !== 'ios') {
+      // Android has no action sheet here; the library is the only path this build needs.
+      runPicker(pickRecipePhoto, "Couldn't open your photos");
+      return;
+    }
+    ActionSheetIOS.showActionSheetWithOptions(
+      { options: ['Take Photo', 'Choose from Library', 'Cancel'], cancelButtonIndex: 2 },
+      index => {
+        if (index === 0) runPicker(takeRecipePhoto, "Couldn't open the camera");
+        if (index === 1) runPicker(pickRecipePhoto, "Couldn't open your photos");
+      }
+    );
   };
 
   const resetForm = () => {
@@ -217,7 +233,7 @@ export const AddRecipeScreen = () => {
               <View style={styles.photoActions}>
                 <TouchableOpacity
                   style={[styles.photoActionBtn, { borderColor: colors.badgeBorder, backgroundColor: colors.surface }]}
-                  onPress={handlePickPhoto}
+                  onPress={handleAddPhoto}
                   accessibilityRole="button"
                 >
                   <Text style={[styles.photoActionText, { color: colors.title }]}>Change photo</Text>
@@ -234,9 +250,9 @@ export const AddRecipeScreen = () => {
           ) : (
             <TouchableOpacity
               style={[styles.addButton, { borderColor: colors.badgeBorder, backgroundColor: colors.surface }]}
-              onPress={handlePickPhoto}
+              onPress={handleAddPhoto}
               accessibilityRole="button"
-              accessibilityLabel="Add a photo from your library"
+              accessibilityLabel="Add a photo: take one or choose from your library"
             >
               <AddRecipeIcon size={18} color={colors.title} />
               <Text style={[styles.addButtonText, { color: colors.title }]}>Add Photo</Text>

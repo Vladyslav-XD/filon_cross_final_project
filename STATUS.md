@@ -2,6 +2,14 @@
 
 Append one entry per finished task: date · task · what changed · files · how verified.
 
+## 2026-09-18 · task 3 — camera for recipe photos (Claude Code)
+- `app.json`: `cameraPermission` text set on the `expo-image-picker` plugin ("Mocktail Finder uses the camera only to take a picture for a recipe you create. Photos stay on your device."); `photosPermission` unchanged, `microphonePermission` still false. This string is what iOS shows in the permission dialog, so it ships with the next build — a JS reload will not pick it up.
+- `takeRecipePhoto()` in `src/utils/recipePhotos.ts`: `requestCameraPermissionsAsync()` then `launchCameraAsync({ quality: 0.7, exif: false })`. On refusal it explains and offers "Open Settings" (`Linking.openSettings()`) — after the first refusal iOS never asks again, so Settings is the only way back.
+- Add Photo / Change photo now open an `ActionSheetIOS` sheet: Take Photo / Choose from Library / Cancel. Android keeps the library path (no sheet).
+- Files: `app.json`, `src/utils/recipePhotos.ts`, `src/screens/AddRecipeScreen.tsx`.
+- Verified: `npx tsc --noEmit` clean, `npx expo export --platform ios` builds.
+- **Needs a real iPhone via TestFlight:** the simulator has no camera, so "Take Photo", the permission dialog and its wording can only be checked there. The Privacy Policy page on vladfilon.com still needs one sentence about the camera (Cowork's side); App Privacy stays "Data Not Collected".
+
 ## 2026-09-18 · task 2 — edit own recipe (Claude Code)
 - "Edit" sits next to "Delete" in one row on the details screen (both outlined, Delete in `colors.error`). Added `PencilIcon`.
 - **Where Edit lives.** `AddRecipeScreen` is registered a second time, in `StackNavigator` as `EditRecipe`, and pushed on top of the recipe with a `recipe` param. Going through the Add Recipe *tab* instead would have left the param stuck on that tab — tap "Add Recipe" later and you would still be editing the old recipe. A pushed screen is a fresh instance every time, so the form simply initialises from the param and Back returns to the recipe.
