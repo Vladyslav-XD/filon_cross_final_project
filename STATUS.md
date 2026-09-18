@@ -2,6 +2,13 @@
 
 Append one entry per finished task: date · task · what changed · files · how verified.
 
+## 2026-09-18 · task 6 — bundled drink photos wired in (Claude Code)
+- New `src/utils/recipeImage.ts` with one function, `recipeImageSource(id, imageUrl)`: the bundled photo when `drinkPhoto(id)` has one, otherwise `{ uri: resolveImageUri(imageUrl) }`. Putting the choice in one place keeps the four call sites identical and leaves user photos untouched (their ids are timestamps, never TheCocktailDB ids).
+- Used in `RecipeCard` call sites (`MocktailFinderScreen`, `FavouritesScreen`) and directly on `RecipeDetailsScreen` and `RandomScreen`. `RecipeCard` already accepted a ready image source, so the component itself did not change; `resizeMode="cover"` everywhere as before.
+- Share text left alone on purpose: it shares `recipe.imageUrl`, still the TheCocktailDB web address. A bundled file has no URL a recipient could open.
+- `assets/drinks/` (58 files, 3.1 MB) committed here. `src/data/drinkPhotos.ts` slipped into the task 2 commit by accident — harmless, nothing imported it until now.
+- Verified: `npx tsc --noEmit` clean; `npx expo export --platform ios` bundles all 58 `assets/drinks` images (counted in the export output). How they look on screen, and list scrolling, still want a human pass.
+
 ## 2026-09-18 · task 5 — small fixes (Claude Code)
 - (a) "Add to Favourites" / "Remove from Favourites" — UK spelling, on both `RecipeDetailsScreen` and `RandomScreen` (the Random screen had the same two strings; the task only named the details screen).
 - (b) `ios.buildNumber` removed from `app.json`; EAS owns the build number (`appVersionSource: remote`).

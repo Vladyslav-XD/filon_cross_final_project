@@ -5,6 +5,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 
 import { HeartPulseIcon } from '../components/icons';
 import { RecipeCard } from '../components/RecipeCard';
+import { recipeImageSource } from '../utils/recipeImage';
 import { spacing } from '../theme/spacing';
 import { Header } from '../components/Header';
 import { SCREENS } from '../constants/screens';
@@ -43,7 +44,7 @@ export const FavouritesScreen = () => {
               key={recipe.id}
               title={recipe.title}
               subtitle={recipe.subtitle}
-              imageUrl={recipe.imageUrl}
+              imageUrl={recipeImageSource(recipe.id, recipe.imageUrl)}
               isFavorite={true}
               onFavoritePress={() => toggleFavorite(recipe)}
               onPress={() => navigation.navigate(SCREENS.HOME_TAB, { 

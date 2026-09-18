@@ -10,8 +10,8 @@ import { fetchDetailsCached } from '../api/detailsCache';
 import { fetchMocktails } from '../api/recipes';
 import { Recipe } from '../data/mockData';
 import { tagsToSubtitle } from '../utils/drinkTags';
-import { resolveImageUri } from '../utils/recipePhotos';
 import { PhotoScrim } from '../components/PhotoScrim';
+import { recipeImageSource } from '../utils/recipeImage';
 import { useFavorites } from '../context/FavoritesContext';
 import { shareRecipe, splitInstructions } from '../utils/recipeText';
 import { useTheme } from '../context/ThemeContext';
@@ -180,7 +180,7 @@ export const RandomScreen = () => {
       >
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: resolveImageUri(currentRecipe.imageUrl) }}
+            source={recipeImageSource(currentRecipe.id, currentRecipe.imageUrl)}
             style={styles.heroImage}
             resizeMode="cover"
           />

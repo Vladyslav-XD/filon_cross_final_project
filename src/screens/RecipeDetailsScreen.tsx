@@ -7,6 +7,7 @@ import { Recipe } from '../data/mockData';
 import { HeartIcon, ShareIcon, ArrowLeftIcon, TrashIcon, PencilIcon } from '../components/icons';
 import { SCREENS } from '../constants/screens';
 import { PhotoScrim } from '../components/PhotoScrim';
+import { recipeImageSource } from '../utils/recipeImage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFavorites } from '../context/FavoritesContext';
 import { RecipeDetails } from '../api/api';
@@ -132,7 +133,7 @@ export const RecipeDetailsScreen = () => {
         onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
       >
         <View style={{ position: 'relative' }}>
-          <Animated.Image source={{ uri: resolveImageUri(recipe.imageUrl) }} style={[styles.image, { opacity: imageOpacity }]} />
+          <Animated.Image source={recipeImageSource(recipe.id, recipe.imageUrl)} style={[styles.image, { opacity: imageOpacity }]} />
           <PhotoScrim />
           <View style={{ position: 'absolute', top: insets.top + spacing.s, left: spacing.l, right: spacing.l, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' }} onPress={() => navigation.goBack()}>

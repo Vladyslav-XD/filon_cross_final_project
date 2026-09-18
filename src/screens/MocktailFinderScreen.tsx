@@ -4,6 +4,7 @@ import { Header } from '../components/Header';
 import { Badge } from '../components/Badge';
 import { SearchBar } from '../components/SearchBar';
 import { RecipeCard } from '../components/RecipeCard';
+import { recipeImageSource } from '../utils/recipeImage';
 import { ShuffleIcon } from '../components/icons';
 import { spacing } from '../theme/spacing';
 import { Recipe } from '../data/mockData';
@@ -203,7 +204,7 @@ export const MocktailFinderScreen = () => {
       <RecipeCard
         title={item.title}
         subtitle={item.subtitle}
-        imageUrl={item.imageUrl}
+        imageUrl={recipeImageSource(item.id, item.imageUrl)}
         isFavorite={isFavorite(item.id)}
         onFavoritePress={() => toggleFavorite(item)}
         onPress={() => navigation.navigate(SCREENS.RECIPE_DETAILS, { recipe: item })}
