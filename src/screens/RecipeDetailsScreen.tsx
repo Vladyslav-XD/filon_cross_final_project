@@ -6,6 +6,7 @@ import { spacing } from '../theme/spacing';
 import { Recipe } from '../data/mockData';
 import { HeartIcon, ShareIcon, ArrowLeftIcon, TrashIcon, PencilIcon } from '../components/icons';
 import { SCREENS } from '../constants/screens';
+import { PhotoScrim } from '../components/PhotoScrim';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFavorites } from '../context/FavoritesContext';
 import { RecipeDetails } from '../api/api';
@@ -124,12 +125,15 @@ export const RecipeDetailsScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View 
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}
+      {/* Sticky header. It is opaque (colors.background) so the list passes cleanly
+          underneath it instead of showing through the gutters beside the title card. */}
+      <View
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, backgroundColor: colors.background, paddingBottom: spacing.s }}
         onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
       >
         <View style={{ position: 'relative' }}>
           <Animated.Image source={{ uri: resolveImageUri(recipe.imageUrl) }} style={[styles.image, { opacity: imageOpacity }]} />
+          <PhotoScrim />
           <View style={{ position: 'absolute', top: insets.top + spacing.s, left: spacing.l, right: spacing.l, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' }} onPress={() => navigation.goBack()}>
                <ArrowLeftIcon size={24} color={colors.title} />
@@ -220,7 +224,7 @@ export const RecipeDetailsScreen = () => {
             <TouchableOpacity style={[styles.addFavoriteBtn, { backgroundColor: colors.activeBadgeBG }]} onPress={() => toggleFavorite(recipe)} activeOpacity={0.8}>
               <HeartIcon size={20} color={'#ffffff'} focused={isFav} />
               <Text style={styles.addFavoriteBtnText}>
-                {isFav ? 'Remove from Favorites' : 'Add to Favorites'}
+                {isFav ? 'Remove from Favourites' : 'Add to Favourites'}
               </Text>
             </TouchableOpacity>
 

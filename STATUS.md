@@ -2,6 +2,14 @@
 
 Append one entry per finished task: date · task · what changed · files · how verified.
 
+## 2026-09-18 · task 5 — small fixes (Claude Code)
+- (a) "Add to Favourites" / "Remove from Favourites" — UK spelling, on both `RecipeDetailsScreen` and `RandomScreen` (the Random screen had the same two strings; the task only named the details screen).
+- (b) `ios.buildNumber` removed from `app.json`; EAS owns the build number (`appVersionSource: remote`).
+- (c) Sticky header: the header was transparent, so the scrolling list showed through the 12px gutters either side of the title card. Fix is one line — the header container now paints `colors.background` and pads `spacing.s` at the bottom, so content disappears under it cleanly and the card keeps its shadow. Same fix on `RandomScreen`, which has the identical header.
+- (d) New `src/components/PhotoScrim.tsx`: a short dark fade over the top of the hero photo on both screens, so the light status bar survives a pale drink photo. Chosen over switching the bar style by image brightness — that needs to decode every image and still flickers.
+- Files: `app.json`, `src/screens/RecipeDetailsScreen.tsx`, `src/screens/RandomScreen.tsx`, `src/components/PhotoScrim.tsx`.
+- Verified: `npx tsc --noEmit` clean, `npx expo export --platform ios` builds, app runs. (c) and (d) are visual and were not seen on screen — this session cannot open a recipe in the simulator; worth a glance when you next tap through.
+
 ## 2026-09-18 · task 4 — remember the theme (Claude Code)
 - `ThemeContext` now holds three modes: `system | light | dark`. `theme` (what is drawn) stays what every screen reads, so no screen changed — only `Header` knows about modes. Saved under `STORAGE_KEYS.theme` (`@mocktail-finder/theme`).
 - `loadThemeMode()` is awaited in `App.tsx` inside the same `Promise.all` as the store and the details cache, and passed to `ThemeProvider` as `initialMode` — the app opens in the saved theme with no flash.

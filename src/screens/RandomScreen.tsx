@@ -11,6 +11,7 @@ import { fetchMocktails } from '../api/recipes';
 import { Recipe } from '../data/mockData';
 import { tagsToSubtitle } from '../utils/drinkTags';
 import { resolveImageUri } from '../utils/recipePhotos';
+import { PhotoScrim } from '../components/PhotoScrim';
 import { useFavorites } from '../context/FavoritesContext';
 import { shareRecipe, splitInstructions } from '../utils/recipeText';
 import { useTheme } from '../context/ThemeContext';
@@ -172,8 +173,9 @@ export const RandomScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View 
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}
+      {/* Sticky header, opaque for the same reason as on the details screen. */}
+      <View
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, backgroundColor: colors.background, paddingBottom: spacing.s }}
         onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
       >
         <View style={styles.imageContainer}>
@@ -182,6 +184,7 @@ export const RandomScreen = () => {
             style={styles.heroImage}
             resizeMode="cover"
           />
+          <PhotoScrim />
           <View style={{ position: 'absolute', top: insets.top + spacing.s, left: spacing.l, right: spacing.l, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" style={[styles.shuffleButton, { backgroundColor: colors.surface }]} activeOpacity={0.8} onPress={handleBack}>
               <ArrowLeftIcon size={24} color={colors.title} />
@@ -253,7 +256,7 @@ export const RandomScreen = () => {
             <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.activeBadgeBG }]} activeOpacity={0.8} onPress={() => toggleFavorite(currentRecipe)}>
               <HeartIcon size={20} color="#ffffff" focused={isFav} />
               <Text style={styles.primaryButtonText}>
-                {isFav ? 'Remove from Favorites' : 'Add to Favorites'}
+                {isFav ? 'Remove from Favourites' : 'Add to Favourites'}
               </Text>
             </TouchableOpacity>
 

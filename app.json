@@ -15,7 +15,6 @@
     },
     "ios": {
       "bundleIdentifier": "com.filonexperiencedesign.mocktailfinder",
-      "buildNumber": "1",
       "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false
