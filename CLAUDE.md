@@ -14,7 +14,8 @@ Read this first. It describes the project, how it is built and released, what is
 - `TASKS.md` — the queue. Cowork (or Vlad) adds tasks; work them top-down, one task = one commit, tick the box when done.
 - `STATUS.md` — the log. After every finished task append: date, what changed, files touched, how it was verified. Cowork reads this file to pick up where you left off, so keep it factual and short.
 - Before each commit: `npx tsc --noEmit` must be clean. Never run `eas build` or `eas submit` without Vlad's explicit ok in the terminal.
-- **Push rule (given by Vlad 18 Sept).** Standing permission for exactly one thing: `git push origin release/1.1 v1.0.0-build4` (branch `release/1.1` and tags) — run it after every finished task, as a backup. Never touch other branches on GitHub, never `--force`, never push `master` without a fresh ok. Remote `origin` = `https://github.com/Vladyslav-XD/filon_cross_final_project.git`. If a push asks for a login or a token, stop and say what is needed — never ask Vlad for a password.
+- **Push rule (given by Vlad 18 Sept).** Standing permission for exactly one thing: `git push origin release/1.1 v1.0.0-build4` (branch `release/1.1` and tags) — run it after every finished task, as a backup. Never touch other branches on GitHub, never `--force`. Remote `origin` = `https://github.com/Vladyslav-XD/filon_cross_final_project.git`. If a push asks for a login or a token, stop and say what is needed — never ask Vlad for a password.
+- **`main` (22 Sept).** `main` is the default branch and holds the released state (currently `2f32cfb`, 1.0.0 build 4, tagged `v1.0.0-build4`). It is **only ever updated by merging `release/1.1` into it, after Vlad's explicit ok** — never a direct commit, never a push of unrelated work, never `--force`. The old course history lives on `archive/course-2026`; leave it alone.
 
 ## What the app is
 
