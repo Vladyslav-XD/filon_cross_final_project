@@ -1,10 +1,7 @@
 import { Share } from 'react-native';
 
-/**
- * Filled in after the App Store release (https://apps.apple.com/app/id...).
- * While empty, the share text simply omits the store line.
- */
-export const APP_STORE_URL = '';
+/** The live App Store listing; appended to every shared recipe. */
+export const APP_STORE_URL = 'https://apps.apple.com/app/id6811610325';
 
 /**
  * Split free-form instructions into steps.

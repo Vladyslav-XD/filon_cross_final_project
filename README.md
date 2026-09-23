@@ -4,6 +4,8 @@
 
 [View the full UX case study](https://www.vladfilon.com/mocktail-finder.html)
 
+Available on the App Store: https://apps.apple.com/app/id6811610325
+
 ## My role
 
 UX/UI Designer, UX Writer & React Native Developer. I worked across the experience from user flows and interface design to component behaviour, motion and implementation.

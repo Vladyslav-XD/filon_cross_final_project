@@ -2,6 +2,17 @@
 
 Append one entry per finished task: date · task · what changed · files · how verified.
 
+## 2026-09-23 · 1.0 is live; App Store link wired into 1.1 (Claude Code)
+- **1.0.0 (build 4) was approved on 22 September and is on the App Store:** https://apps.apple.com/app/id6811610325
+- GitHub Release published from the existing tag, no new tag created: https://github.com/Vladyslav-XD/mocktail-finder/releases/tag/v1.0.0-build4
+- `APP_STORE_URL` in `src/utils/recipeText.ts` filled in, so every shared recipe now ends with "Get Mocktail Finder: https://apps.apple.com/app/id6811610325". Until today the share text simply left that line out.
+- `app.json`: `expo.version` → `1.1.0`. `ios.buildNumber` confirmed absent (removed in task 5) — EAS assigns the build number remotely.
+- `README.md`: App Store link added under the case-study link.
+- Repository is now `Vladyslav-XD/mocktail-finder` on GitHub. The local `origin` still pointed at the old `filon_cross_final_project` URL (it worked only because GitHub redirects); repointed to the new URL.
+- Branches: `main` = released state (`2f32cfb`, tag `v1.0.0-build4`), `release/1.1` = this work, `archive/course-2026` = the old course history.
+- Verified: `npx tsc --noEmit` clean; share text checked by running the same `buildShareMessage` logic in Node.
+- **Task 7 stays open on purpose** — the production build, TestFlight on a real iPhone (camera!) and the submission are a separate step, and the 1.1 tap-through checks from tasks 1–6 are still unverified by hand.
+
 ## 2026-09-18 · task 6 — bundled drink photos wired in (Claude Code)
 - New `src/utils/recipeImage.ts` with one function, `recipeImageSource(id, imageUrl)`: the bundled photo when `drinkPhoto(id)` has one, otherwise `{ uri: resolveImageUri(imageUrl) }`. Putting the choice in one place keeps the four call sites identical and leaves user photos untouched (their ids are timestamps, never TheCocktailDB ids).
 - Used in `RecipeCard` call sites (`MocktailFinderScreen`, `FavouritesScreen`) and directly on `RecipeDetailsScreen` and `RandomScreen`. `RecipeCard` already accepted a ready image source, so the component itself did not change; `resizeMode="cover"` everywhere as before.
