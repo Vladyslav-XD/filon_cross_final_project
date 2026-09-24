@@ -2,6 +2,12 @@
 
 Append one entry per finished task: date · task · what changed · files · how verified.
 
+## 2026-09-24 · 1.1 is live (Claude Code)
+- **1.1.0 (build 5) released on the App Store on 24 September 2026:** https://apps.apple.com/app/id6811610325
+- Task 7 in `TASKS.md` ticked — the whole 1.1 queue (tasks 0–7) is now closed. What shipped: delete and edit your own recipes, camera for recipe photos, 58 bundled drink photos, a remembered theme (system/light/dark), UK spelling, opaque sticky headers and the photo scrim.
+- `release/1.1` merged into `main` and tagged `v1.1.0`; `main` again holds exactly what is on the App Store.
+- Next work starts from a fresh branch off `main`. `release/1.1` can stay as a record of this cycle.
+
 ## 2026-09-23 · 1.0 is live; App Store link wired into 1.1 (Claude Code)
 - **1.0.0 (build 4) was approved on 22 September and is on the App Store:** https://apps.apple.com/app/id6811610325
 - GitHub Release published from the existing tag, no new tag created: https://github.com/Vladyslav-XD/mocktail-finder/releases/tag/v1.0.0-build4
